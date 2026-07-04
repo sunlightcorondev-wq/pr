@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { User } from "firebase/auth";
 import { Sparkles, LogOut, FileText, FileSpreadsheet, Layers, ShieldCheck, HelpCircle, Link } from "lucide-react";
-import { initAuth, googleSignIn, logout } from "./firebaseAuth";
+import { initAuth, googleSignIn, logout, handleRedirectResult } from "./firebaseAuth";
 import { AuthOverlay } from "./components/AuthOverlay";
 import { SpreadsheetSelector } from "./components/SpreadsheetSelector";
 import { RequisitionScanner } from "./components/RequisitionScanner";
@@ -20,6 +20,17 @@ export default function App() {
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   useEffect(() => {
+    // Check for redirect result on load
+    const checkRedirect = async () => {
+      const result = await handleRedirectResult();
+      if (result) {
+        setToken(result.accessToken);
+        setUser(result.user);
+        setNeedsAuth(false);
+      }
+    };
+    checkRedirect();
+
     // Initialize Firebase authentication listener
     const unsubscribe = initAuth(
       (currentUser, accessToken) => {
@@ -40,15 +51,9 @@ export default function App() {
   const handleLogin = async () => {
     setIsLoggingIn(true);
     try {
-      const result = await googleSignIn();
-      if (result) {
-        setToken(result.accessToken);
-        setUser(result.user);
-        setNeedsAuth(false);
-      }
+      await googleSignIn();
     } catch (err) {
       console.error("Sign-in failed:", err);
-    } finally {
       setIsLoggingIn(false);
     }
   };
