@@ -34,7 +34,8 @@ export default function App() {
       unsubscribe = initAuth(
         (currentUser, accessToken) => {
           setUser(currentUser);
-          setToken(accessToken);
+          // Only update token if we don't have a valid Google access token
+          setToken(prev => prev || accessToken);
           setNeedsAuth(false);
         },
         () => {
