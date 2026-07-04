@@ -1,0 +1,8 @@
+{
+  "name": "Requisition Sheet Scanner",
+  "description": "Scan and extract text from requisition forms and packing lists using Gemini OCR, and sync them with Google Sheets.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
