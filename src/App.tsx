@@ -20,32 +20,34 @@ export default function App() {
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   useEffect(() => {
-    // Check for redirect result on load
-    const checkRedirect = async () => {
+    let unsubscribe: () => void;
+
+    const setupAuth = async () => {
       const result = await handleRedirectResult();
       if (result) {
         setToken(result.accessToken);
         setUser(result.user);
         setNeedsAuth(false);
       }
+
+      // Initialize Firebase authentication listener
+      unsubscribe = initAuth(
+        (currentUser, accessToken) => {
+          setUser(currentUser);
+          setToken(accessToken);
+          setNeedsAuth(false);
+        },
+        () => {
+          setUser(null);
+          setToken(null);
+          setNeedsAuth(true);
+        }
+      );
     };
-    checkRedirect();
 
-    // Initialize Firebase authentication listener
-    const unsubscribe = initAuth(
-      (currentUser, accessToken) => {
-        setUser(currentUser);
-        setToken(accessToken);
-        setNeedsAuth(false);
-      },
-      () => {
-        setUser(null);
-        setToken(null);
-        setNeedsAuth(true);
-      }
-    );
+    setupAuth();
 
-    return () => unsubscribe();
+    return () => unsubscribe && unsubscribe();
   }, []);
 
   const handleLogin = async () => {
