@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { User } from "firebase/auth";
 import { Sparkles, LogOut, FileText, FileSpreadsheet, Layers, ShieldCheck, HelpCircle, Link } from "lucide-react";
-import { initAuth, googleSignIn, logout, handleRedirectResult } from "./firebaseAuth";
+import { initAuth, googleSignIn, logout } from "./firebaseAuth";
 import { AuthOverlay } from "./components/AuthOverlay";
 import { SpreadsheetSelector } from "./components/SpreadsheetSelector";
 import { RequisitionScanner } from "./components/RequisitionScanner";
@@ -23,13 +23,6 @@ export default function App() {
     let unsubscribe: () => void;
 
     const setupAuth = async () => {
-      const result = await handleRedirectResult();
-      if (result) {
-        setToken(result.accessToken);
-        setUser(result.user);
-        setNeedsAuth(false);
-      }
-
       // Initialize Firebase authentication listener
       unsubscribe = initAuth(
         (currentUser, accessToken) => {
@@ -54,9 +47,13 @@ export default function App() {
   const handleLogin = async () => {
     setIsLoggingIn(true);
     try {
-      await googleSignIn();
+      const result = await googleSignIn();
+      setUser(result.user);
+      setToken(result.accessToken);
+      setNeedsAuth(false);
     } catch (err) {
       console.error("Sign-in failed:", err);
+    } finally {
       setIsLoggingIn(false);
     }
   };

@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { getAuth, signInWithRedirect, getRedirectResult, GoogleAuthProvider, onAuthStateChanged, User } from "firebase/auth";
+import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, User } from "firebase/auth";
 import firebaseConfig from "../firebase-applet-config.json";
 
 const app = initializeApp(firebaseConfig);
@@ -19,43 +19,43 @@ export const initAuth = (
   onAuthFailure?: () => void
 ) => {
   return onAuthStateChanged(auth, async (user: User | null) => {
+    console.log("Auth state changed, user:", !!user, "cachedAccessToken:", !!cachedAccessToken, "isSigningIn:", isSigningIn);
     if (user) {
       if (cachedAccessToken) {
+        console.log("Auth success, calling onAuthSuccess");
         if (onAuthSuccess) onAuthSuccess(user, cachedAccessToken);
       } else if (!isSigningIn) {
         // Try to trigger a sign-in or let caller know they need to authorize
+        console.log("Auth failure, calling onAuthFailure");
         cachedAccessToken = null;
         if (onAuthFailure) onAuthFailure();
       }
     } else {
+      console.log("Auth failure (no user), calling onAuthFailure");
       cachedAccessToken = null;
       if (onAuthFailure) onAuthFailure();
     }
   });
 };
 
-// Handle redirect result on app load
+// Handle redirect result on app load (not needed for popup)
 export const handleRedirectResult = async (): Promise<{ user: User; accessToken: string } | null> => {
-  try {
-    const result = await getRedirectResult(auth);
-    if (result) {
-      const credential = GoogleAuthProvider.credentialFromResult(result);
-      if (credential?.accessToken) {
-        cachedAccessToken = credential.accessToken;
-        return { user: result.user, accessToken: cachedAccessToken };
-      }
-    }
-  } catch (error) {
-    console.error("Redirect result error:", error);
-  }
   return null;
 };
 
 // Must be called from a button click or user interaction
-export const googleSignIn = async (): Promise<void> => {
+export const googleSignIn = async (): Promise<{ user: User; accessToken: string }> => {
   try {
     isSigningIn = true;
-    await signInWithRedirect(auth, provider);
+    console.log("Attempting sign in with popup...");
+    const result = await signInWithPopup(auth, provider);
+    console.log("Popup sign in successful.");
+    const credential = GoogleAuthProvider.credentialFromResult(result);
+    if (credential?.accessToken) {
+      cachedAccessToken = credential.accessToken;
+      return { user: result.user, accessToken: cachedAccessToken };
+    }
+    throw new Error("No access token found");
   } catch (error: any) {
     console.error("Sign in error:", error);
     throw error;
